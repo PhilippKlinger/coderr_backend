@@ -1,16 +1,24 @@
 from django.db import models
 from django.conf import settings
 
+
 class Offer(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="offers")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="offers"
+    )
     title = models.CharField(max_length=100)
-    image = models.ImageField(upload_to='offer_images/', null=True, blank=True)
+    image = models.ImageField(upload_to="offer_images/", null=True, blank=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)  # korrigiert: auto_now statt auto_now_add
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.title} - {self.user.username}"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Offer"
+        verbose_name_plural = "Offers"
 
 
 class OfferDetail(models.Model):
@@ -30,3 +38,8 @@ class OfferDetail(models.Model):
 
     def __str__(self):
         return f"{self.offer.title} - {self.offer_type}"
+
+    class Meta:
+        ordering = ["price"]
+        verbose_name = "Offer Detail"
+        verbose_name_plural = "Offer Details"

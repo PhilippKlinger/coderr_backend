@@ -5,7 +5,8 @@ from rest_framework.response import Response
 
 from .models import Profile
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
-from rest_framework import views, status
+from .permissions import IsProfileOwner
+from rest_framework import views, status, generics
 from rest_framework.authtoken.models import Token
 
 
@@ -42,21 +43,17 @@ class LoginUserView(views.APIView):
         
         
 class UserProfileView(views.APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProfileOwner]
 
     def get(self, request, pk):
-        if request.user.pk != pk:
-            return Response({"detail": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
-
         profile = get_object_or_404(Profile, user__pk=pk)
+        self.check_object_permissions(request, profile)
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data)
     
     def patch(self, request, pk):
-        if request.user.pk != pk:
-            return Response({"detail": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
-
         profile = get_object_or_404(Profile, user__pk=pk)
+        self.check_object_permissions(request, profile)
         serializer = UserProfileSerializer(profile, data=request.data, partial=True)
 
         if serializer.is_valid():
@@ -66,18 +63,17 @@ class UserProfileView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class BusinessProfileView(views.APIView):
+class BusinessProfileView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        profiles = Profile.objects.filter(type="business")
-        serializer = UserProfileSerializer(profiles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-class CustomerProfileView(views.APIView):
+    serializer_class = UserProfileSerializer
+
+    def get_queryset(self):
+        return Profile.objects.filter(type="business")
+
+
+class CustomerProfileView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        profiles = Profile.objects.filter(type="customer")
-        serializer = UserProfileSerializer(profiles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer_class = UserProfileSerializer
+
+    def get_queryset(self):
+        return Profile.objects.filter(type="customer")
