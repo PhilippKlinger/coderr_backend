@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "offers",
     "orders",
     "reviews",
+    "baseinfo_app",
 ]
 
 MIDDLEWARE = [
@@ -69,7 +70,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "coderr_api.urls"
+ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
@@ -95,7 +96,7 @@ REST_FRAMEWORK = {
 }
 
 
-WSGI_APPLICATION = "coderr_api.wsgi.application"
+WSGI_APPLICATION = "core.wsgi.application"
 
 
 # Database
