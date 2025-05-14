@@ -8,13 +8,10 @@ class IsCustomerUser(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return (
-            request.method in SAFE_METHODS
-            or (
-                request.user.is_authenticated
-                and hasattr(request.user, "profile")
-                and request.user.profile.type == "customer"
-            )
+        return request.method in SAFE_METHODS or (
+            request.user.is_authenticated
+            and hasattr(request.user, "profile")
+            and request.user.profile.type == "customer"
         )
 
 
@@ -25,10 +22,7 @@ class IsOrderOwnerOrReadOnly(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in SAFE_METHODS
-            or (
-                request.user.is_authenticated
-                and obj.customer_user == request.user
-            )
+        return request.method in SAFE_METHODS or (
+            request.user.is_authenticated
+            and (obj.customer_user == request.user or obj.business_user == request.user)
         )

@@ -1,15 +1,19 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from offers.models import OfferDetail
 
 from .models import Order
 from .permissions import IsCustomerUser, IsOrderOwnerOrReadOnly
-from .serializers import OrderSerializer, OrderCreateSerializer
+from .serializers import OrderOutputSerializer, OrderSerializer, OrderCreateSerializer
+
+User = get_user_model()
 
 
 class OrderListCreateView(ListCreateAPIView):
@@ -20,7 +24,7 @@ class OrderListCreateView(ListCreateAPIView):
     def get_serializer_class(self):
         if self.request.method == "POST":
             return OrderCreateSerializer
-        return OrderSerializer
+        return OrderOutputSerializer
 
     def create(self, request, *args, **kwargs):
         offer_detail_id = request.data.get("offer_detail_id")
@@ -60,3 +64,33 @@ class OrderRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsOrderOwnerOrReadOnly]
     lookup_field = "id"
+
+
+class OrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        if not User.objects.filter(id=business_user_id).exists():
+            return Response(
+                {"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        count = Order.objects.filter(
+            business_user__id=business_user_id, status="in_progress"
+        ).count()
+        return Response({"order_count": count}, status=status.HTTP_200_OK)
+
+
+class CompletedOrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        if not User.objects.filter(id=business_user_id).exists():
+            return Response(
+                {"error": "Business user not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        count = Order.objects.filter(
+            business_user__id=business_user_id, status="completed"
+        ).count()
+        return Response({"order_count": count}, status=status.HTTP_200_OK)

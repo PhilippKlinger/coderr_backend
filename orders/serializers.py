@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from accounts.models import Profile
+from accounts.serializers import NestedUserProfileSerializer, UserProfileSerializer
 from .models import Order
 from offers.models import OfferDetail
 from django.contrib.auth import get_user_model
@@ -26,7 +29,6 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "customer_user",
             "business_user",
-            "status",
             "created_at",
             "updated_at",
         ]
@@ -37,7 +39,9 @@ class OrderCreateSerializer(serializers.Serializer):
 
     def validate_offer_detail_id(self, value):
         if not OfferDetail.objects.filter(id=value).exists():
-            raise serializers.ValidationError("OfferDetail with this ID does not exist.")
+            raise serializers.ValidationError(
+                "OfferDetail with this ID does not exist."
+            )
         return value
 
     def create(self, validated_data):
@@ -56,3 +60,25 @@ class OrderCreateSerializer(serializers.Serializer):
             offer_type=offer_detail.offer_type,
         )
         return order
+
+
+class OrderOutputSerializer(serializers.ModelSerializer):
+    customer_user = serializers.IntegerField(source="customer_user.id", read_only=True)
+    business_user = serializers.IntegerField(source="business_user.id", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "customer_user",         # <-- als ID (int)
+            "business_user",         # <-- als ID (int)
+            "title",
+            "revisions",
+            "delivery_time_in_days",
+            "price",
+            "features",
+            "offer_type",
+            "status",
+            "created_at",
+            "updated_at",
+        ]

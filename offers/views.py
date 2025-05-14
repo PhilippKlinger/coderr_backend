@@ -47,7 +47,7 @@ class OfferListCreateView(ListCreateAPIView):
     POST /api/offers/       -> create offer (Business-User), mindestens 3 details
     """
     pagination_class = OfferPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filter_backends = [ OrderingFilter, SearchFilter]
     filterset_class = OfferFilter
     search_fields = ["title", "description"]
     ordering_fields = ["updated_at", "min_price"]

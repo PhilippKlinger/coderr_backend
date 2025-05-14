@@ -72,13 +72,25 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
+
+    def get_user(self, obj):
+        return {
+            "pk": obj.user.id,
+            "username": obj.user.username,
+            "email": obj.user.email,
+            "first_name": obj.user.first_name,
+            "last_name": obj.user.last_name,
+        }
 
     class Meta:
         model = Profile
         fields = [
             "user",
+            "user_id", 
             "username",
             "first_name",
             "last_name",
@@ -91,3 +103,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "created_at",
         ]
+
+
+
+class NestedUserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        exclude = ["id"]
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+            "first_name": obj.first_name or obj.user.first_name,
+            "last_name": obj.last_name or obj.user.last_name,
+            "email": obj.user.email,
+        }
