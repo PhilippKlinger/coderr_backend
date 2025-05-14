@@ -29,26 +29,10 @@ class OfferPagination(PageNumberPagination):
     page_size_query_param = "page_size"
 
 
-class OfferFilter(FilterSet):
-    creator_id = NumberFilter(field_name="user", lookup_expr="exact")
-    min_price = NumberFilter(field_name="details__price", lookup_expr="gte")
-    max_delivery_time = NumberFilter(
-        field_name="details__delivery_time_in_days", lookup_expr="lte"
-    )
-
-    class Meta:
-        model = Offer
-        fields = ["creator_id", "min_price", "max_delivery_time"]
-
 
 class OfferListCreateView(ListCreateAPIView):
-    """
-    GET  /api/offers/       -> list all offers, filterbar nach creator_id, min_price, max_delivery_time
-    POST /api/offers/       -> create offer (Business-User), mindestens 3 details
-    """
     pagination_class = OfferPagination
     filter_backends = [ OrderingFilter, SearchFilter]
-    filterset_class = OfferFilter
     search_fields = ["title", "description"]
     ordering_fields = ["updated_at", "min_price"]
 
@@ -63,10 +47,26 @@ class OfferListCreateView(ListCreateAPIView):
         return OfferSerializer
 
     def get_queryset(self):
-        return Offer.objects.all().annotate(
-            min_price=Min("details__price"),
-            min_delivery_time=Min("details__delivery_time_in_days"),
-        )
+        queryset = Offer.objects.all().annotate(
+        min_price=Min("details__price"),
+        min_delivery_time=Min("details__delivery_time_in_days"),
+    )
+
+        creator_id = self.request.query_params.get("creator_id")
+
+        # Sonderfall: creator_id ist kein int (z. B. [object Object])
+        if creator_id and not creator_id.isdigit():
+            import json
+            try:
+                parsed = json.loads(creator_id)
+                creator_id = parsed.get("pk") or parsed.get("id")
+            except Exception:
+                creator_id = None
+
+        if creator_id:
+            queryset = queryset.filter(user__id=creator_id)
+
+        return queryset
 
     def post(self, request, *args, **kwargs):
         details = request.data.get("details", [])
