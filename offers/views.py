@@ -17,6 +17,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 
 from .models import Offer, OfferDetail
 from .serializers import (
+    OfferRetrieveSerializer,
     OfferSerializer,
     OfferDetailViewSerializer,
     OfferDetailSingleSerializer,
@@ -45,8 +46,6 @@ class OfferListCreateView(ListCreateAPIView):
     GET  /api/offers/       -> list all offers, filterbar nach creator_id, min_price, max_delivery_time
     POST /api/offers/       -> create offer (Business-User), mindestens 3 details
     """
-
-    serializer_class = OfferSerializer
     pagination_class = OfferPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_class = OfferFilter
@@ -57,6 +56,11 @@ class OfferListCreateView(ListCreateAPIView):
         if self.request.method in SAFE_METHODS:
             return [AllowAny()]
         return [IsAuthenticated(), IsBusinessUser()]
+    
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return OfferRetrieveSerializer
+        return OfferSerializer
 
     def get_queryset(self):
         return Offer.objects.all().annotate(

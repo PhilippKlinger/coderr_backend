@@ -1,6 +1,8 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class IsProfileOwner(BasePermission):
+class IsProfileOwnerOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
-        return obj.user == request.user
+        if request.method in SAFE_METHODS:
+            return True  # GET, HEAD, OPTIONS erlaubt für alle Authentifizierten
+        return obj.user == request.user  # PATCH etc. nur für Eigentümer
