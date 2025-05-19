@@ -97,9 +97,12 @@ class OfferDetailViewSerializer(serializers.ModelSerializer):
 
 # 🔹 Für POST/PATCH — Eingabedetails (kein Lesen)
 class OfferDetailInputSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     class Meta:
         model = OfferDetail
         fields = [
+            "id",
             "title",
             "revisions",
             "delivery_time_in_days",
@@ -107,6 +110,7 @@ class OfferDetailInputSerializer(serializers.ModelSerializer):
             "features",
             "offer_type",
         ]
+
 
 class OfferDetailSingleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -147,16 +151,18 @@ class OfferSerializer(serializers.ModelSerializer):
         read_only_fields = ["user", "min_price", "min_delivery_time", "user_details"]
 
     def get_min_price(self, obj):
-        return min([detail.price for detail in obj.details.all()])
+        prices = [d.price for d in obj.details.all()]
+        return min(prices) if prices else None
 
     def get_min_delivery_time(self, obj):
-        return min([detail.delivery_time_in_days for detail in obj.details.all()])
+        times = [d.delivery_time_in_days for d in obj.details.all()]
+        return min(times) if times else None
 
     def get_user_details(self, obj):
         return {
             "username": obj.user.username,
-            "first_name": obj.user.profile.first_name,
-            "last_name": obj.user.profile.last_name,
+            "first_name": obj.user.profile.first_name or obj.user.first_name,
+            "last_name": obj.user.profile.last_name or obj.user.last_name,
         }
 
     def create(self, validated_data):
@@ -173,9 +179,28 @@ class OfferSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
 
-        if details_data:
-            instance.details.all().delete()
-            for detail in details_data:
-                OfferDetail.objects.create(offer=instance, **detail)
-
+        if details_data is not None:
+            # Update existing, add new, delete removed
+            existing_details = {d.id: d for d in instance.details.all()}
+            passed_ids = []
+            for detail_data in details_data:
+                detail_id = detail_data.get("id", None)
+                if detail_id and detail_id in existing_details:
+                    # Update existing detail
+                    detail = existing_details[detail_id]
+                    for key, value in detail_data.items():
+                        if key != "id":
+                            setattr(detail, key, value)
+                    detail.save()
+                    passed_ids.append(detail_id)
+                else:
+                    # Create new detail
+                    OfferDetail.objects.create(
+                        offer=instance,
+                        **{k: v for k, v in detail_data.items() if k != "id"}
+                    )
+            # Delete details not included in PATCH
+            for old_id, old_detail in existing_details.items():
+                if old_id not in passed_ids:
+                    old_detail.delete()
         return instance

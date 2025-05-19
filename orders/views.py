@@ -1,11 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import render
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 
 from offers.models import OfferDetail
 
@@ -20,6 +22,10 @@ class OrderListCreateView(ListCreateAPIView):
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated, IsCustomerUser]
     search_fields = ["title"]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Order.objects.filter(Q(customer_user=user) | Q(business_user=user))
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -93,4 +99,4 @@ class CompletedOrderCountView(APIView):
         count = Order.objects.filter(
             business_user__id=business_user_id, status="completed"
         ).count()
-        return Response({"order_count": count}, status=status.HTTP_200_OK)
+        return Response({"completed_order_count": count}, status=status.HTTP_200_OK)

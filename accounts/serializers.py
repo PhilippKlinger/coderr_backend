@@ -72,25 +72,15 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    user_id = serializers.IntegerField(source="user.id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
-    email = serializers.EmailField(source="user.email", read_only=True)
-
-    def get_user(self, obj):
-        return {
-            "pk": obj.user.id,
-            "username": obj.user.username,
-            "email": obj.user.email,
-            "first_name": obj.user.first_name,
-            "last_name": obj.user.last_name,
-        }
+    email = serializers.EmailField(source="user.email", required=False)
+    first_name = serializers.CharField(source="user.first_name", required=False)
+    last_name = serializers.CharField(source="user.last_name", required=False)
 
     class Meta:
         model = Profile
         fields = [
             "user",
-            "user_id", 
             "username",
             "first_name",
             "last_name",
@@ -104,6 +94,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", {})
+
+        user = instance.user
+        user.email = user_data.get("email", user.email)
+        user.first_name = user_data.get("first_name", user.first_name)
+        user.last_name = user_data.get("last_name", user.last_name)
+        user.save()
+
+        return super().update(instance, validated_data)
 
 
 class NestedUserProfileSerializer(serializers.ModelSerializer):
@@ -115,7 +115,7 @@ class NestedUserProfileSerializer(serializers.ModelSerializer):
 
     def get_user(self, obj):
         return {
-            "id": obj.user.id,
+            "pk": obj.user.id,
             "username": obj.user.username,
             "first_name": obj.first_name or obj.user.first_name,
             "last_name": obj.last_name or obj.user.last_name,

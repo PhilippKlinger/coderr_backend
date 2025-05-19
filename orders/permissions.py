@@ -17,12 +17,16 @@ class IsCustomerUser(BasePermission):
 
 class IsOrderOwnerOrReadOnly(BasePermission):
     """
-    Nur der Kunde (customer_user) darf PATCH oder DELETE auf eine Bestellung ausführen.
-    Lesezugriff ist für alle erlaubt.
+    PATCH nur für business_user,
+    GET für beide Beteiligten,
+    DELETE für Admins.
     """
 
     def has_object_permission(self, request, view, obj):
-        return request.method in SAFE_METHODS or (
-            request.user.is_authenticated
-            and (obj.customer_user == request.user or obj.business_user == request.user)
-        )
+        if request.method in SAFE_METHODS:
+            return obj.customer_user == request.user or obj.business_user == request.user
+        if request.method in ["PATCH", "PUT"]:
+            return obj.business_user == request.user
+        if request.method == "DELETE":
+            return request.user.is_staff  # Nur Admin darf löschen!
+        return False
