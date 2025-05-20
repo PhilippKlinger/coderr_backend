@@ -29,10 +29,9 @@ class OfferPagination(PageNumberPagination):
     page_size_query_param = "page_size"
 
 
-
 class OfferListCreateView(ListCreateAPIView):
     pagination_class = OfferPagination
-    filter_backends = [ OrderingFilter, SearchFilter]
+    filter_backends = [OrderingFilter, SearchFilter]
     search_fields = ["title", "description"]
     ordering_fields = ["updated_at", "min_price"]
 
@@ -40,23 +39,28 @@ class OfferListCreateView(ListCreateAPIView):
         if self.request.method in SAFE_METHODS:
             return [AllowAny()]
         return [IsAuthenticated(), IsBusinessUser()]
-    
+
     def get_serializer_class(self):
         if self.request.method == "GET":
             return OfferRetrieveSerializer
         return OfferSerializer
 
     def get_queryset(self):
-        queryset = Offer.objects.all().annotate(
-        min_price=Min("details__price"),
-        min_delivery_time=Min("details__delivery_time_in_days"),
-    )
+        queryset = (
+            Offer.objects.all()
+            .annotate(
+                min_price=Min("details__price"),
+                min_delivery_time=Min("details__delivery_time_in_days"),
+            )
+            .order_by("-created_at")
+        )
 
         creator_id = self.request.query_params.get("creator_id")
 
         # Sonderfall: creator_id ist kein int (z. B. [object Object])
         if creator_id and not creator_id.isdigit():
             import json
+
             try:
                 parsed = json.loads(creator_id)
                 creator_id = parsed.get("pk") or parsed.get("id")
@@ -84,14 +88,18 @@ class OfferListCreateView(ListCreateAPIView):
 class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Offer.objects.all()
     serializer_class = OfferDetailViewSerializer
-    permission_classes = [IsAuthenticated, IsOfferOwnerOrReadOnly]
     lookup_field = "id"
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated(), IsOfferOwnerOrReadOnly()]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return OfferDetailViewSerializer
         return OfferSerializer
-    
+
 
 class OfferDetailRetrieveView(RetrieveAPIView):
     queryset = OfferDetail.objects.all()
