@@ -48,8 +48,8 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
     def get_user_details(self, obj):
         return {
             "username": obj.user.username,
-            "first_name": obj.user.profile.first_name,
-            "last_name": obj.user.profile.last_name,
+            "first_name": obj.user.first_name,
+            "last_name": obj.user.last_name,
         }
 
 
@@ -161,8 +161,8 @@ class OfferSerializer(serializers.ModelSerializer):
     def get_user_details(self, obj):
         return {
             "username": obj.user.username,
-            "first_name": obj.user.profile.first_name or obj.user.first_name,
-            "last_name": obj.user.profile.last_name or obj.user.last_name,
+            "first_name": obj.user.first_name,
+            "last_name": obj.user.last_name,
         }
 
     def create(self, validated_data):

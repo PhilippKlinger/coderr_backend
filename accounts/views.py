@@ -5,7 +5,8 @@ from rest_framework.response import Response
 
 from .models import Profile
 from .serializers import (
-    NestedUserProfileSerializer,
+    BusinessProfileSerializer,
+    CustomerProfileSerializer,
     UserRegistrationSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
@@ -79,7 +80,7 @@ class UserProfileView(views.APIView):
 
 class BusinessProfileView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = NestedUserProfileSerializer
+    serializer_class = BusinessProfileSerializer
 
     def get_queryset(self):
         return Profile.objects.filter(type="business")
@@ -87,7 +88,7 @@ class BusinessProfileView(generics.ListAPIView):
 
 class CustomerProfileView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = NestedUserProfileSerializer
+    serializer_class = CustomerProfileSerializer
 
     def get_queryset(self):
         return Profile.objects.filter(type="customer")

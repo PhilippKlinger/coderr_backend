@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from accounts.models import Profile
-from accounts.serializers import NestedUserProfileSerializer, UserProfileSerializer
 from .models import Order
 from offers.models import OfferDetail
 from django.contrib.auth import get_user_model

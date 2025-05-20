@@ -94,6 +94,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.type == "customer":
+            for field in ["location", "tel", "description", "working_hours"]:
+                data.pop(field, None)
+        return data
+
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user", {})
 
@@ -106,18 +113,42 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class NestedUserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Profile
-        exclude = ["id"]
-
+class NestedUserFieldMixin:
     def get_user(self, obj):
         return {
             "pk": obj.user.id,
             "username": obj.user.username,
-            "first_name": obj.first_name or obj.user.first_name,
-            "last_name": obj.last_name or obj.user.last_name,
+            "first_name": obj.user.first_name,
+            "last_name": obj.user.last_name,
             "email": obj.user.email,
         }
+
+
+class BusinessProfileSerializer(NestedUserFieldMixin, serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            "user",
+            "type",
+            "created_at",
+            "file",
+            "location",
+            "tel",
+            "description",
+            "working_hours",
+        ]
+
+
+class CustomerProfileSerializer(NestedUserFieldMixin, serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            "user",
+            "type",
+            "created_at",
+            "file",
+        ]
