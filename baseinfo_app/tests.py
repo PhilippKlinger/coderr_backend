@@ -1,9 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
-from accounts.models import Profile
-from reviews.models import Review
-from offers.models import Offer
+from accounts_app.models import Profile
+from reviews_app.models import Review
+from offers_app.models import Offer
 from django.contrib.auth.models import User
 
 class BaseInfoViewTests(TestCase):

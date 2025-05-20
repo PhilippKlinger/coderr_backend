@@ -44,10 +44,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
-    "accounts",
-    "offers",
-    "orders",
-    "reviews",
+    "accounts_app",
+    "offers_app",
+    "orders_app",
+    "reviews_app",
     "baseinfo_app",
 ]
 

@@ -3,14 +3,14 @@ import django
 import random
 from faker import Faker
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")  # ggf. anpassen
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
 django.setup()
 
 from django.contrib.auth.models import User
-from accounts.models import Profile
-from offers.models import Offer, OfferDetail
-from orders.models import Order
-from reviews.models import Review
+from accounts_app.models import Profile
+from offers_app.models import Offer, OfferDetail
+from orders_app.models import Order
+from reviews_app.models import Review
 
 fake = Faker()
 
