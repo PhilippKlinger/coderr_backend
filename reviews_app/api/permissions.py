@@ -9,3 +9,16 @@ class IsReviewerOrReadOnly(BasePermission):
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
         return obj.reviewer == request.user
+
+class IsCustomerUser(BasePermission):
+    """
+    Custom permission for Write-Only acces to profile "customer".
+    """
+    def has_permission(self, request, view):
+        if request.method in ("POST", "PATCH", "PUT", "DELETE"):
+            return (
+                request.user.is_authenticated and
+                hasattr(request.user, "profile") and
+                request.user.profile.type == "customer"
+            )
+        return request.user.is_authenticated

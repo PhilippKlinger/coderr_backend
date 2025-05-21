@@ -113,6 +113,7 @@ class OfferDetailInputSerializer(serializers.ModelSerializer):
     Used for POST and PATCH operations.
     """
     id = serializers.IntegerField(required=False)
+    offer_type = serializers.CharField(required=True)
 
     class Meta:
         model = OfferDetail
@@ -125,6 +126,11 @@ class OfferDetailInputSerializer(serializers.ModelSerializer):
             "features",
             "offer_type",
         ]
+        
+    def validate(self, data):
+        if not data.get("offer_type"):
+            raise serializers.ValidationError({"offer_type": "This field is required."})
+        return data
 
 
 class OfferDetailSingleSerializer(serializers.ModelSerializer):
@@ -201,13 +207,11 @@ class OfferSerializer(serializers.ModelSerializer):
         instance.save()
 
         if details_data is not None:
-            # Update existing, add new, delete removed
             existing_details = {d.id: d for d in instance.details.all()}
             passed_ids = []
             for detail_data in details_data:
                 detail_id = detail_data.get("id", None)
                 if detail_id and detail_id in existing_details:
-                    # Update existing detail
                     detail = existing_details[detail_id]
                     for key, value in detail_data.items():
                         if key != "id":
@@ -215,12 +219,10 @@ class OfferSerializer(serializers.ModelSerializer):
                     detail.save()
                     passed_ids.append(detail_id)
                 else:
-                    # Create new detail
                     OfferDetail.objects.create(
                         offer=instance,
                         **{k: v for k, v in detail_data.items() if k != "id"}
                     )
-            # Delete details not included in PATCH
             for old_id, old_detail in existing_details.items():
                 if old_id not in passed_ids:
                     old_detail.delete()

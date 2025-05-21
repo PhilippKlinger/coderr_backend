@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework.exceptions import NotFound
 
 from accounts_app.models import Profile
 from offers_app.models import OfferDetail
@@ -43,9 +44,7 @@ class OrderCreateSerializer(serializers.Serializer):
 
     def validate_offer_detail_id(self, value):
         if not OfferDetail.objects.filter(id=value).exists():
-            raise serializers.ValidationError(
-                "OfferDetail with this ID does not exist."
-            )
+            raise NotFound("OfferDetail with this ID does not exist.")
         return value
 
     def create(self, validated_data):

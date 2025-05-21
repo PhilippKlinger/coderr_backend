@@ -79,8 +79,8 @@ class ReviewsTests(TestCase):
             "description": "Fake Bewertung"
         }
         response = self.client.post("/api/reviews/", data)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn("Nur Kunden dürfen Bewertungen abgeben.", str(response.data))
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("permission", str(response.data).lower())
 
     def test_retrieve_review(self):
         self.auth_customer()

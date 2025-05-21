@@ -4,7 +4,6 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import status
 from rest_framework.response import Response
@@ -18,25 +17,21 @@ from .serializers import (
     OfferDetailViewSerializer,
     OfferDetailSingleSerializer,
 )
-
-
-class OfferPagination(PageNumberPagination):
-    """
-    Pagination class for offers, sets a default page size and allows page size query parameter.
-    """
-    page_size = 6
-    page_size_query_param = "page_size"
+from .pagination import OfferPagination
+from .filters import OfferFilter, OfferFilterConf
 
 
 class OfferListCreateView(ListCreateAPIView):
     """
     API view to list all offers or create a new offer.
-    Provides pagination, search, ordering, and filtering by creator.
+    Provides pagination, search, ordering, and filtering by creator, price, and delivery time.
     """
+
     pagination_class = OfferPagination
-    filter_backends = [OrderingFilter, SearchFilter]
-    search_fields = ["title", "description"]
-    ordering_fields = ["updated_at", "min_price"]
+    filterset_class = OfferFilter
+    filter_backends = OfferFilterConf.filter_backends
+    search_fields = OfferFilterConf.search_fields
+    ordering_fields = OfferFilterConf.ordering_fields
 
     def get_permissions(self):
         if self.request.method in SAFE_METHODS:
@@ -49,24 +44,19 @@ class OfferListCreateView(ListCreateAPIView):
         return OfferSerializer
 
     def get_queryset(self):
-        queryset = (
-            Offer.objects.all()
-            .annotate(
-                min_price=Min("details__price"),
-                min_delivery_time=Min("details__delivery_time_in_days"),
-            )
-            .order_by("-created_at")
-        )
-        creator_id = self.request.query_params.get("creator_id")
-        if creator_id and not creator_id.isdigit():
-            import json
-            try:
-                parsed = json.loads(creator_id)
-                creator_id = parsed.get("pk") or parsed.get("id")
-            except Exception:
-                creator_id = None
-        if creator_id:
-            queryset = queryset.filter(user__id=creator_id)
+        queryset = Offer.objects.all().annotate(
+            min_price=Min("details__price"),
+            min_delivery_time=Min("details__delivery_time_in_days"),
+        ).order_by("-created_at")
+
+        min_price = self.request.query_params.get("min_price")
+        if min_price:
+            queryset = queryset.filter(min_price__gte=min_price)
+
+        max_delivery_time = self.request.query_params.get("max_delivery_time")
+        if max_delivery_time:
+            queryset = queryset.filter(min_delivery_time__lte=max_delivery_time)
+
         return queryset
 
     def post(self, request, *args, **kwargs):
@@ -87,6 +77,7 @@ class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     API view to retrieve, update, or delete a specific offer.
     GET requests are open to all, write operations require owner permissions.
     """
+
     queryset = Offer.objects.all()
     serializer_class = OfferDetailViewSerializer
     lookup_field = "id"
@@ -107,6 +98,7 @@ class OfferDetailRetrieveView(RetrieveAPIView):
     API view to retrieve the full details of a single offer detail (package).
     Accessible by anyone.
     """
+
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSingleSerializer
     permission_classes = [AllowAny]

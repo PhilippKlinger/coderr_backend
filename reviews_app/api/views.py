@@ -1,12 +1,15 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet, NumberFilter
+from rest_framework import status
+
 
 from reviews_app.models import Review
-from .permissions import IsReviewerOrReadOnly
+from .permissions import IsCustomerUser, IsReviewerOrReadOnly
 from .serializers import ReviewSerializer, ReviewUpdateSerializer
 
 
@@ -26,7 +29,7 @@ class ReviewListCreateView(ListCreateAPIView):
     API view to list all reviews or create a new review as a customer.
     """
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCustomerUser]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     ordering_fields = ["updated_at", "rating"]
 
@@ -50,3 +53,12 @@ class ReviewRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         if self.request.method == "PATCH":
             return ReviewUpdateSerializer
         return ReviewSerializer
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        full_serializer = ReviewSerializer(instance, context={'request': request})
+        return Response(full_serializer.data, status=status.HTTP_200_OK)

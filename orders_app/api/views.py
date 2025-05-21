@@ -30,38 +30,13 @@ class OrderListCreateView(ListCreateAPIView):
         if self.request.method == "POST":
             return OrderCreateSerializer
         return OrderOutputSerializer
-
-    def create(self, request, *args, **kwargs):
-        offer_detail_id = request.data.get("offer_detail_id")
-        if not offer_detail_id:
-            return Response(
-                {"error": "offer_detail_id is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            offer_detail = OfferDetail.objects.select_related("offer__user").get(
-                pk=offer_detail_id
-            )
-        except OfferDetail.DoesNotExist:
-            return Response(
-                {"error": "OfferDetail not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        order = Order.objects.create(
-            customer_user=request.user,
-            business_user=offer_detail.offer.user,
-            title=offer_detail.title,
-            revisions=offer_detail.revisions,
-            delivery_time_in_days=offer_detail.delivery_time_in_days,
-            price=offer_detail.price,
-            features=offer_detail.features,
-            offer_type=offer_detail.offer_type,
-        )
-
-        serializer = OrderSerializer(order)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        output_serializer = OrderOutputSerializer(order)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class OrderRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
