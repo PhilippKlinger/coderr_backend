@@ -80,3 +80,24 @@ If you already created a superuser, you will need to recreate it afterwards.
 python manage.py shell < seed.py
 ```
 The script uses Faker to generate demo users, business profiles, offers, orders, and reviews for Coderr.
+
+### API Documentation (Swagger & Redoc)
+
+This project provides an interactive API documentation using Swagger UI and Redoc.
+After starting the development server, you can access the documentation at:
+
+- http://localhost:8000/swagger/ (Swagger UI)
+- http://localhost:8000/redoc/ (Redoc UI)
+
+## With these tools, you can:
+- Browse all endpoints, parameters, and data models.
+- Try out requests directly in the browser (for example, login, create offers, post reviews).
+- See the expected responses and possible error codes.
+
+## Tip:
+For endpoints that require authentication, log in using the /api/login/ endpoint to obtain your token.
+Then, click the “Authorize” button in the Swagger UI and enter your token as:
+
+Token <your_token_here>
+
+This will allow you to access all protected endpoints directly from the documentation UI.
