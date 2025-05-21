@@ -1,7 +1,9 @@
-from django import views
-from django.shortcuts import get_object_or_404, render
+from rest_framework import views, status, generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+
+from django.shortcuts import get_object_or_404
 
 from accounts_app.models import Profile
 from .serializers import (
@@ -12,11 +14,12 @@ from .serializers import (
     UserProfileSerializer,
 )
 from .permissions import IsProfileOwnerOrReadOnly
-from rest_framework import views, status, generics
-from rest_framework.authtoken.models import Token
 
 
 class RegisterUserView(views.APIView):
+    """
+    API view to register a new user.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -37,6 +40,9 @@ class RegisterUserView(views.APIView):
 
 
 class LoginUserView(views.APIView):
+    """
+    API view to login a user.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -58,6 +64,9 @@ class LoginUserView(views.APIView):
 
 
 class UserProfileView(views.APIView):
+    """
+    API view for Profile details.
+    """
     permission_classes = [IsAuthenticated, IsProfileOwnerOrReadOnly]
 
     def get(self, request, pk):
@@ -79,6 +88,9 @@ class UserProfileView(views.APIView):
 
 
 class BusinessProfileView(generics.ListAPIView):
+    """
+    API list view for business profiles.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = BusinessProfileSerializer
 
@@ -87,6 +99,9 @@ class BusinessProfileView(generics.ListAPIView):
 
 
 class CustomerProfileView(generics.ListAPIView):
+    """
+    API list view for customer profiles.
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = CustomerProfileSerializer
 

@@ -1,8 +1,10 @@
-from django.db import models
 from django.conf import settings
-
+from django.db import models
 
 class Offer(models.Model):
+    """
+    Represents an offer created by a business user.
+    """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="offers"
     )
@@ -22,6 +24,9 @@ class Offer(models.Model):
 
 
 class OfferDetail(models.Model):
+    """
+    Represents a detail/package of an offer (e.g. basic, standard, premium).
+    """
     OFFER_TYPE_CHOICES = (
         ("basic", "Basic"),
         ("standard", "Standard"),

@@ -3,8 +3,10 @@ from offers_app.models import Offer, OfferDetail
 from rest_framework.reverse import reverse
 
 
-# 🔹 Für GET /api/offers/ — nur Links zu Details
 class OfferDetailReferenceSerializer(serializers.ModelSerializer):
+    """
+    Serializer for referencing offer detail via URL (for list view).
+    """
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -16,8 +18,11 @@ class OfferDetailReferenceSerializer(serializers.ModelSerializer):
         return reverse("offerdetail-retrieve", args=[obj.id], request=request)
 
 
-# 🔹 Für GET /api/offers/ — Listenansicht
 class OfferRetrieveSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving a list of offers, including minimum price, minimum delivery time,
+    and user details.
+    """
     details = OfferDetailReferenceSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -53,8 +58,11 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
         }
 
 
-# 🔹 Für GET /api/offers/{id}/ — vollständige Details
 class OfferDetailFullSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving the full details of an offer detail (package).
+    Used when retrieving a specific offer.
+    """
     class Meta:
         model = OfferDetail
         fields = [
@@ -69,6 +77,10 @@ class OfferDetailFullSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailViewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving the complete information of a single offer,
+    including all related offer details, minimum price, and minimum delivery time.
+    """
     details = OfferDetailFullSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -95,8 +107,11 @@ class OfferDetailViewSerializer(serializers.ModelSerializer):
         return min([d.delivery_time_in_days for d in obj.details.all()])
 
 
-# 🔹 Für POST/PATCH — Eingabedetails (kein Lesen)
 class OfferDetailInputSerializer(serializers.ModelSerializer):
+    """
+    Serializer for inputting (creating/updating) offer details as part of an offer.
+    Used for POST and PATCH operations.
+    """
     id = serializers.IntegerField(required=False)
 
     class Meta:
@@ -113,6 +128,9 @@ class OfferDetailInputSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailSingleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for retrieving a single offer detail.
+    """
     class Meta:
         model = OfferDetail
         fields = [
@@ -126,8 +144,11 @@ class OfferDetailSingleSerializer(serializers.ModelSerializer):
         ]
 
 
-# 🔹 Für POST / PATCH (nested write)
 class OfferSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and updating offers, including nested offer details.
+    Also provides computed fields like minimum price, minimum delivery time, and user details.
+    """
     details = OfferDetailInputSerializer(many=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()

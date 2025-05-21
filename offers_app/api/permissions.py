@@ -3,10 +3,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class IsBusinessUser(BasePermission):
     """
-    Erlaubt nur authentifizierten Business-Usern Schreibrechte.
-    Leserechte sind für alle (AllowAny).
+    Allows write permissions only to authenticated business users.
+    Read permissions are allowed for any request.
     """
-
     def has_permission(self, request, view):
         return (
             request.method in SAFE_METHODS
@@ -20,10 +19,9 @@ class IsBusinessUser(BasePermission):
 
 class IsOfferOwnerOrReadOnly(BasePermission):
     """
-    Nur der Ersteller darf PATCH oder DELETE auf ein Angebot ausführen.
-    GET ist für alle erlaubt.
+    Object-level permission: Only the offer creator can update or delete the offer.
+    Read-only access is allowed to anyone.
     """
-
     def has_object_permission(self, request, view, obj):
         return (
             request.method in SAFE_METHODS

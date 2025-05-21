@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from reviews_app.models import Review
 
-from rest_framework import serializers
-from reviews_app.models import Review
-
-
 class ReviewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating and retrieving reviews.
+    Only customers can submit reviews, and only one review per business is allowed.
+    """
     reviewer = serializers.ReadOnlyField(source="reviewer.id")
 
     class Meta:
@@ -26,11 +26,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         reviewer = request.user
         business_user = data.get("business_user")
 
-        # Prüfen, ob der Nutzer ein Kunde ist
         if reviewer.profile.type != "customer":
             raise serializers.ValidationError("Nur Kunden dürfen Bewertungen abgeben.")
 
-        # Prüfen, ob der Kunde bereits eine Bewertung abgegeben hat
         if Review.objects.filter(
             reviewer=reviewer, business_user=business_user
         ).exists():
@@ -42,6 +40,9 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating only the rating and description of a review.
+    """
     class Meta:
         model = Review
         fields = ["rating", "description"]

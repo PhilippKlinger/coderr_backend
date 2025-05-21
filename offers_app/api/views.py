@@ -1,20 +1,16 @@
-from warnings import filters
-from django import views
-from django.db.models import Min
-from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
-from .permissions import IsBusinessUser, IsOfferOwnerOrReadOnly
-from rest_framework.response import Response
-from rest_framework import views, status
-from django_filters.rest_framework import DjangoFilterBackend, FilterSet, NumberFilter
-
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveAPIView,
     RetrieveUpdateDestroyAPIView,
 )
+from rest_framework.permissions import AllowAny, IsAuthenticated, SAFE_METHODS
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework import status
+from rest_framework.response import Response
+from django.db.models import Min
 
+from .permissions import IsBusinessUser, IsOfferOwnerOrReadOnly
 from offers_app.models import Offer, OfferDetail
 from .serializers import (
     OfferRetrieveSerializer,
@@ -25,11 +21,18 @@ from .serializers import (
 
 
 class OfferPagination(PageNumberPagination):
+    """
+    Pagination class for offers, sets a default page size and allows page size query parameter.
+    """
     page_size = 6
     page_size_query_param = "page_size"
 
 
 class OfferListCreateView(ListCreateAPIView):
+    """
+    API view to list all offers or create a new offer.
+    Provides pagination, search, ordering, and filtering by creator.
+    """
     pagination_class = OfferPagination
     filter_backends = [OrderingFilter, SearchFilter]
     search_fields = ["title", "description"]
@@ -54,22 +57,16 @@ class OfferListCreateView(ListCreateAPIView):
             )
             .order_by("-created_at")
         )
-
         creator_id = self.request.query_params.get("creator_id")
-
-        # Sonderfall: creator_id ist kein int (z. B. [object Object])
         if creator_id and not creator_id.isdigit():
             import json
-
             try:
                 parsed = json.loads(creator_id)
                 creator_id = parsed.get("pk") or parsed.get("id")
             except Exception:
                 creator_id = None
-
         if creator_id:
             queryset = queryset.filter(user__id=creator_id)
-
         return queryset
 
     def post(self, request, *args, **kwargs):
@@ -86,6 +83,10 @@ class OfferListCreateView(ListCreateAPIView):
 
 
 class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    """
+    API view to retrieve, update, or delete a specific offer.
+    GET requests are open to all, write operations require owner permissions.
+    """
     queryset = Offer.objects.all()
     serializer_class = OfferDetailViewSerializer
     lookup_field = "id"
@@ -102,6 +103,10 @@ class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
 
 
 class OfferDetailRetrieveView(RetrieveAPIView):
+    """
+    API view to retrieve the full details of a single offer detail (package).
+    Accessible by anyone.
+    """
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSingleSerializer
     permission_classes = [AllowAny]

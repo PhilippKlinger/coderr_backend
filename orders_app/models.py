@@ -1,8 +1,12 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 
 
 class Order(models.Model):
+    """
+    Represents an order placed by a customer for an offer detail,
+    assigned to a business user. Stores pricing, features, status and timestamps.
+    """
     STATUS_CHOICES = (
         ("in_progress", "In Progress"),
         ("completed", "Completed"),

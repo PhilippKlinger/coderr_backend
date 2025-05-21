@@ -1,24 +1,23 @@
 from django.contrib.auth import get_user_model
-from django.shortcuts import render
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
 from offers_app.models import OfferDetail
-
 from orders_app.models import Order
 from .permissions import IsCustomerUser, IsOrderOwnerOrReadOnly
 from .serializers import OrderOutputSerializer, OrderSerializer, OrderCreateSerializer
 
 User = get_user_model()
 
-
 class OrderListCreateView(ListCreateAPIView):
+    """
+    API view to list all orders related to the current user or create a new order as a customer.
+    """
     queryset = Order.objects.all()
     permission_classes = [IsAuthenticated, IsCustomerUser]
     search_fields = ["title"]
@@ -66,6 +65,9 @@ class OrderListCreateView(ListCreateAPIView):
 
 
 class OrderRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
+    """
+    API view to retrieve, update, or delete a single order instance.
+    """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsOrderOwnerOrReadOnly]
@@ -73,6 +75,9 @@ class OrderRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
 
 
 class OrderCountView(APIView):
+    """
+    API view to retrieve the count of in-progress orders for a specific business user.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
@@ -88,6 +93,9 @@ class OrderCountView(APIView):
 
 
 class CompletedOrderCountView(APIView):
+    """
+    API view to retrieve the count of completed orders for a specific business user.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):

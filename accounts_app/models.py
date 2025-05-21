@@ -1,9 +1,13 @@
 from datetime import date
-from django.db import models
-from django.conf import settings
 
+from django.conf import settings
+from django.db import models
 
 class Profile(models.Model):
+    """
+    Represents a user profile, which extends the Django User model
+    with additional fields and user type.
+    """
     USER_TYPE_CHOICES = (
         ("customer", "Customer"),
         ("business", "Business"),
@@ -15,7 +19,7 @@ class Profile(models.Model):
     file = models.ImageField(upload_to="profile_pictures/", null=True, blank=True)
     location = models.CharField(max_length=50, blank=True, null=True, default="München")
     tel = models.CharField(max_length=20, blank=True, null=True, default="0152435465")
-    description = models.CharField(max_length=150, blank=True, null=True, default="Deine Beschreibung")
+    description = models.CharField(max_length=150, blank=True, null=True, default="Your Description")
     working_hours = models.CharField(max_length=20, blank=True, null=True, default="9-17")
 
     def __str__(self):

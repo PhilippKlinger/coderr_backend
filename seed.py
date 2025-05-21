@@ -14,10 +14,10 @@ from reviews_app.models import Review
 
 fake = Faker()
 
-NUM_USERS = 10
+NUM_USERS = 70
 NUM_OFFERS_PER_BUSINESS = 3
-NUM_ORDERS = 15
-NUM_REVIEWS = 10
+NUM_ORDERS = 35
+NUM_REVIEWS = 60
 
 
 def run():

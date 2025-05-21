@@ -3,10 +3,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class IsCustomerUser(BasePermission):
     """
-    Erlaubt GET, HEAD, OPTIONS für alle.
-    Schreibzugriff nur für authentifizierte Nutzer mit Profiltyp 'customer'.
+    Allows safe methods for any user.
+    Write permissions are only granted to authenticated users with profile type 'customer'.
     """
-
     def has_permission(self, request, view):
         return request.method in SAFE_METHODS or (
             request.user.is_authenticated
@@ -17,16 +16,15 @@ class IsCustomerUser(BasePermission):
 
 class IsOrderOwnerOrReadOnly(BasePermission):
     """
-    PATCH nur für business_user,
-    GET für beide Beteiligten,
-    DELETE für Admins.
+    Allows PATCH only for the business user,
+    GET for both related users,
+    DELETE for admin users only.
     """
-
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return obj.customer_user == request.user or obj.business_user == request.user
         if request.method in ["PATCH", "PUT"]:
             return obj.business_user == request.user
         if request.method == "DELETE":
-            return request.user.is_staff  # Nur Admin darf löschen!
+            return request.user.is_staff
         return False

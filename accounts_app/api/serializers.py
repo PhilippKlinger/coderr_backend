@@ -1,11 +1,16 @@
 from django.contrib.auth.models import User
-from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from accounts_app.models import Profile
 from django.contrib.auth import authenticate
+
+from rest_framework import serializers
+
+from accounts_app.models import Profile
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for registering a new user, including password confirmation and user type.
+    """
     repeated_password = serializers.CharField(write_only=True)
     type = serializers.ChoiceField(choices=Profile.USER_TYPE_CHOICES)
 
@@ -47,6 +52,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
+    """
+    Serializer for login user, including username and password match.
+    """
     username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True)
 
@@ -72,6 +80,9 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for User Profile Details, including a dynamic field response dependend on profile type customer or business.
+    """
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", required=False)
     first_name = serializers.CharField(source="user.first_name", required=False)
@@ -114,6 +125,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class NestedUserFieldMixin:
+    """
+    Serializer for nested user object, frontend requires pk.
+    """
     def get_user(self, obj):
         return {
             "pk": obj.user.id,
@@ -125,6 +139,9 @@ class NestedUserFieldMixin:
 
 
 class BusinessProfileSerializer(NestedUserFieldMixin, serializers.ModelSerializer):
+    """
+    Serializer for business list view.
+    """
     user = serializers.SerializerMethodField()
 
     class Meta:
@@ -142,6 +159,9 @@ class BusinessProfileSerializer(NestedUserFieldMixin, serializers.ModelSerialize
 
 
 class CustomerProfileSerializer(NestedUserFieldMixin, serializers.ModelSerializer):
+    """
+    Serializer customer list view.
+    """
     user = serializers.SerializerMethodField()
 
     class Meta:

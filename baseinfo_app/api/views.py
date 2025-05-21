@@ -9,6 +9,9 @@ from offers_app.models import Offer
 
 
 class BaseInfoView(APIView):
+    """
+    API view for summarized base infos.
+    """
     permission_classes = [AllowAny]
 
     def get(self, request):
