@@ -45,10 +45,13 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
         ]
 
     def get_min_price(self, obj):
-        return min([d.price for d in obj.details.all()])
+        prices = [d.price for d in obj.details.all()]
+        return min(prices) if prices else None
 
     def get_min_delivery_time(self, obj):
-        return min([d.delivery_time_in_days for d in obj.details.all()])
+        times = [d.delivery_time_in_days for d in obj.details.all()]
+        return min(times) if times else None
+
 
     def get_user_details(self, obj):
         return {

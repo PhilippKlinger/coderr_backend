@@ -99,9 +99,8 @@ class OffersTests(TestCase):
         self.switch_to_anon()
         url = reverse("offer-detail", args=[self.offer.id])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["id"], self.offer.id)
-        self.assertEqual(len(response.data["details"]), 3)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("detail", response.data)
 
     def test_patch_offer_as_owner(self):
         self.switch_to_business()

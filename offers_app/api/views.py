@@ -26,7 +26,6 @@ class OfferListCreateView(ListCreateAPIView):
     API view to list all offers or create a new offer.
     Provides pagination, search, ordering, and filtering by creator, price, and delivery time.
     """
-
     pagination_class = OfferPagination
     filterset_class = OfferFilter
     filter_backends = OfferFilterConf.filter_backends
@@ -48,15 +47,6 @@ class OfferListCreateView(ListCreateAPIView):
             min_price=Min("details__price"),
             min_delivery_time=Min("details__delivery_time_in_days"),
         ).order_by("-created_at")
-
-        min_price = self.request.query_params.get("min_price")
-        if min_price:
-            queryset = queryset.filter(min_price__gte=min_price)
-
-        max_delivery_time = self.request.query_params.get("max_delivery_time")
-        if max_delivery_time:
-            queryset = queryset.filter(min_delivery_time__lte=max_delivery_time)
-
         return queryset
 
     def post(self, request, *args, **kwargs):
@@ -77,15 +67,10 @@ class OfferRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     API view to retrieve, update, or delete a specific offer.
     GET requests are open to all, write operations require owner permissions.
     """
-
     queryset = Offer.objects.all()
     serializer_class = OfferDetailViewSerializer
     lookup_field = "id"
-
-    def get_permissions(self):
-        if self.request.method == "GET":
-            return [AllowAny()]
-        return [IsAuthenticated(), IsOfferOwnerOrReadOnly()]
+    permission_classes = [IsAuthenticated, IsOfferOwnerOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
