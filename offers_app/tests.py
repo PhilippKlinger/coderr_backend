@@ -133,5 +133,5 @@ class OffersTests(TestCase):
         self.switch_to_anon()
         url = reverse("offerdetail-retrieve", args=[self.detail1.id])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["id"], self.detail1.id)
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("detail", response.data)

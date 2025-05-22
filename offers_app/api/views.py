@@ -86,5 +86,5 @@ class OfferDetailRetrieveView(RetrieveAPIView):
 
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailSingleSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     lookup_field = "id"
