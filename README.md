@@ -32,28 +32,24 @@ Coderr is a service marketplace platform where customers can register, browse bu
 ### Installation
 
 ```bash
-# Clone the repository
+# 1. Clone the repository  
 git clone git@github.com:PhilippKlinger/coderr_backend.git
 cd coderr_backend
 
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+# 2. Make a copy of the .env.template
+cp .env.dev.template .env -> local development
+cp .env.prod.template .env -> production server
 
-# Install dependencies
-pip install -r requirements.txt
+# 3. Enter your secrets, db settings etc. Be sure to set the right port for CORS.
+http://127.0.0.1:5500/ -> Live Server
+http://127.0.0.1:4200/ -> Angular
 
-# Apply migrations
-python manage.py migrate
+# 4. Build and start all services (backend, postgres)  
+docker compose --profile dev up -d --build -> local development
+docker compose --profile prod up -d --build -> production server
 
-# (Optional) Create a superuser
-python manage.py createsuperuser
-
-# (Optional) Seed database with fake data for testing
-python manage.py shell < seed.py
-
-# Start the development server
-python manage.py runserver
+🟢 The backend, database, will be set up automatically.  
+🟢 All migrations, static/media setup, and superuser creation are handled by the entrypoint script.
 
 ```
 
@@ -70,15 +66,19 @@ python manage.py runserver
 
 For details and parameters, see the API documentation or check the docstrings in the code.
 
-### Using Seed Data
+### Using Seed Data (Docker)
 
-To quickly fill your database with demo data for testing, you can use the included seed.py script.
-Warning: Running the seed script will DELETE ALL EXISTING DATA (including users, offers, orders, and reviews) and recreate the demo content from scratch.
-If you already created a superuser, you will need to recreate it afterwards.
+> ⚠️ Warning: Running the seed script will **DELETE ALL EXISTING DATA** (users, offers, orders, reviews, …).
+> Use only in development or with caution in production.
 
+**in a running container**
+
+Dev:
 ```bash
-python manage.py shell < seed.py
+docker compose --profile dev up -d --build
+docker compose --profile dev exec web sh -lc "python manage.py shell < seed.py"
 ```
+
 The script uses Faker to generate demo users, business profiles, offers, orders, and reviews for Coderr.
 
 ### API Documentation (Swagger & Redoc)
@@ -101,3 +101,30 @@ Then, click the “Authorize” button in the Swagger UI and enter your token as
 Token <your_token_here>
 
 This will allow you to access all protected endpoints directly from the documentation UI.
+
+## Development Tips
+```bash
+**Testing**  
+Run tests inside the running container:
+
+# Tests im Container (DEV-Profile):
+docker compose --profile dev exec web sh -lc "
+  python -m coverage run manage.py test && coverage report
+"
+
+# Tests im Container (PROD-Profile):
+docker compose --profile prod exec web-prod sh -lc "
+  python -m coverage run manage.py test && coverage report
+"
+
+# Logs:
+docker compose logs -f web       # dev
+docker compose logs -f web-prod  # prod
+
+**Environment variables**  
+Sensitive settings are loaded from `.env` (see `.env.example` for reference).
+
+**Admin UI**  
+Access Django Admin at [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/) (credentials set in `.env`).
+```
+---
