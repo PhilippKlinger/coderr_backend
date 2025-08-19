@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16
+    container_name: coderr_database
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    env_file: .env
+    container_name: coderr_backend_dev
+    volumes:
+      - .:/app
+      - coderr_media:/app/media
+      - coderr_static:/app/static
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+
+  web-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    env_file: .env
+    container_name: coderr_backend_prod
+    volumes:
+      - coderr_media:/app/media
+      - coderr_static:/app/static
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  coderr_media:
+  coderr_static:

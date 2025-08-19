@@ -92,7 +92,6 @@ venv.bak/
 
 # Docker (optional)
 .dockerignore
-docker-compose.yml
 
 # Node.js (optional)
 node_modules/
