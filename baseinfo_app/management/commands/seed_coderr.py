@@ -3,6 +3,9 @@ import random
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, Any
 from pathlib import Path
+from datetime import timedelta
+from django.utils import timezone
+
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
@@ -375,6 +378,13 @@ PALETTES = [
     ((20, 184, 166), (34, 197, 94)),  # teal -> green
 ]
 
+TIER_SCHEMES = [
+    ("express", (1, 2, 3), 0.15),  # zeigt im Listing "Express 24 h"
+    ("bis3", (2, 3, 5), 0.30),  # "bis zu 3 Tage"
+    ("bis7", (3, 5, 7), 0.35),  # "bis zu 7 Tage"
+    ("extended", (7, 14, 21), 0.20),  # längere Projekte
+]
+
 
 # ---- Utils ----------------------------------------------------------------
 def _rand_username() -> str:
@@ -389,6 +399,22 @@ def _maybe_faker() -> Optional["FakerT"]:
         return _Faker()
     except Exception:
         return None
+
+
+def _choose_tier_days() -> tuple[int, int, int]:
+    names, days, weights = zip(*TIER_SCHEMES)
+    scheme = random.choices(list(days), weights=weights, k=1)[0]
+    return scheme  # (basic_days, standard_days, premium_days)
+
+
+def _random_past_datetime(max_days: int = 45) -> "timezone.datetime":
+    """
+    Datum in den letzten max_days, bias zu 'kürzlich' (triangular).
+    """
+    now = timezone.now()
+    d = int(random.triangular(0, max_days, 5))  # viele jüngere
+    s = random.randint(0, 23 * 3600 + 59 * 60 + 59)  # zufällige Tageszeit
+    return now - timedelta(days=d, seconds=s)
 
 
 # ---- Command ---------------------------------------------------------------
@@ -516,7 +542,8 @@ class Command(BaseCommand):
                 seen_for_user[uid].add(title)
 
                 offer = Offer.objects.create(user=user, title=title, description=desc)
-                # Bild für Offer
+
+                # Bild (dein bestehender Code bleibt)
                 mode = getattr(self, "_image_mode", "placeholders")
                 if not offer.image:
                     if mode == "bundle":
@@ -530,8 +557,15 @@ class Command(BaseCommand):
                             _attach_placeholder(offer, "image", title, "offer")
                     elif mode == "placeholders":
                         _attach_placeholder(offer, "image", title, "offer")
-                # (none → nichts)
-                all_details += self._create_tiers(offer)
+
+                # Lieferzeiten-Schema für diese Offer bestimmen
+                days_triplet = _choose_tier_days()
+                all_details += self._create_tiers(offer, days_triplet)
+
+                # Erstellungszeitpunkt realistisch verteilen (letzte 45 Tage)
+                ts = _random_past_datetime(45)
+                # effizient aktualisieren ohne Signals/auto_now:
+                Offer.objects.filter(pk=offer.pk).update(created_at=ts, updated_at=ts)
 
         # Faker-Extras
         fk = _maybe_faker()
@@ -689,14 +723,20 @@ class Command(BaseCommand):
             users.append(u)
         return users
 
-    def _create_tiers(self, offer: Offer) -> list[OfferDetail]:
+    def _create_tiers(
+        self, offer: Offer, days_triplet: tuple[int, int, int] | None = None
+    ) -> list[OfferDetail]:
+        if days_triplet is None:
+            days_triplet = _choose_tier_days()
+        b_days, s_days, p_days = days_triplet
+
         base = random.randint(200, 1200)
         features = random.sample(FEATURE_POOL, k=4)
         tiers: list[OfferDetail] = []
         for name, mult, days, rev in [
-            ("basic", Decimal("1.0"), 7, 1),
-            ("standard", Decimal("1.6"), 14, 2),
-            ("premium", Decimal("2.3"), 21, 3),
+            ("basic", Decimal("1.0"), b_days, 1),
+            ("standard", Decimal("1.6"), s_days, 2),
+            ("premium", Decimal("2.3"), p_days, 3),
         ]:
             tiers.append(
                 OfferDetail.objects.create(
@@ -705,9 +745,7 @@ class Command(BaseCommand):
                     price=(Decimal(base) * mult).quantize(Decimal("1.00")),
                     delivery_time_in_days=days,
                     revisions=rev,
-                    features=random.sample(
-                        features, k=min(4, len(features))
-                    ),  # JSONField: Liste von Strings
+                    features=random.sample(features, k=min(4, len(features))),
                     offer_type=name,
                 )
             )
