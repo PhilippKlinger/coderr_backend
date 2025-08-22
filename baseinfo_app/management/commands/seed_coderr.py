@@ -8,7 +8,6 @@ from datetime import timedelta
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractBaseUser
 from django.db import transaction
 from django.conf import settings
 from django.core.files import File
@@ -41,15 +40,6 @@ else:
 
 UserModel = get_user_model()
 SEED_MEDIA_DIR = Path(settings.BASE_DIR) / "seed_media"
-
-if TYPE_CHECKING:
-    from faker import Faker as FakerT
-
-    UserT = AbstractBaseUser
-else:
-    FakerT = Any
-    UserT = AbstractBaseUser
-
 
 # ---- Utils ----------------------------------------------------------------
 def _rand_username() -> str:
@@ -439,7 +429,3 @@ class Command(BaseCommand):
                 )
             )
         return tiers
-
-
-def _slug(s: str) -> str:
-    return "".join(c.lower() if c.isalnum() else "-" for c in s).strip("-")
