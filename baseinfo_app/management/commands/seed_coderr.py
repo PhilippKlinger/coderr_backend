@@ -26,7 +26,7 @@ from reviews_app.models import Review
 
 # Faker optional
 try:
-    from faker import Faker  # type: ignore
+    from faker import Faker  
 except Exception:
     Faker = None  # noqa: N816
 
@@ -36,7 +36,7 @@ SEED_MEDIA_DIR = Path(settings.BASE_DIR) / "seed_media"
 
 # ---- Typing helpers (für Pylance) -----------------------------------------
 if TYPE_CHECKING:
-    from faker import Faker as FakerT  # type: ignore
+    from faker import Faker as FakerT  
 
     UserT = AbstractBaseUser
 else:
@@ -385,6 +385,9 @@ TIER_SCHEMES = [
     ("extended", (7, 14, 21), 0.20),  # längere Projekte
 ]
 
+def _choose_tier_days() -> tuple[int, int, int]:
+    _, days, weights = zip(*TIER_SCHEMES)
+    return random.choices(list(days), weights=weights, k=1)[0]
 
 # ---- Utils ----------------------------------------------------------------
 def _rand_username() -> str:
@@ -394,7 +397,7 @@ def _rand_username() -> str:
 
 def _maybe_faker() -> Optional["FakerT"]:
     try:
-        from faker import Faker as _Faker  # type: ignore
+        from faker import Faker as _Faker  
 
         return _Faker()
     except Exception:
@@ -589,7 +592,9 @@ class Command(BaseCommand):
                     title=t,
                     description=fk.paragraph(nb_sentences=2),
                 )
-                all_details += self._create_tiers(offer)
+                days_triplet = _choose_tier_days()
+                all_details += self._create_tiers(offer, days_triplet)
+
 
         # Orders
         self.stdout.write("Erzeuge Orders…")
@@ -723,23 +728,21 @@ class Command(BaseCommand):
             users.append(u)
         return users
 
-    def _create_tiers(
-        self, offer: Offer, days_triplet: tuple[int, int, int] | None = None
-    ) -> list[OfferDetail]:
-        if days_triplet is None:
-            days_triplet = _choose_tier_days()
-        b_days, s_days, p_days = days_triplet
+        def _create_tiers(self, offer, days_triplet=None):
+            if days_triplet is None:
+                days_triplet = _choose_tier_days()
+            b_days, s_days, p_days = days_triplet
 
-        base = random.randint(200, 1200)
-        features = random.sample(FEATURE_POOL, k=4)
-        tiers: list[OfferDetail] = []
-        for name, mult, days, rev in [
-            ("basic", Decimal("1.0"), b_days, 1),
-            ("standard", Decimal("1.6"), s_days, 2),
-            ("premium", Decimal("2.3"), p_days, 3),
-        ]:
-            tiers.append(
-                OfferDetail.objects.create(
+            base = random.randint(200, 1200)
+            features = random.sample(FEATURE_POOL, k=4)
+            data = [
+                ("basic",    Decimal("1.0"), b_days, 1),
+                ("standard", Decimal("1.6"), s_days, 2),
+                ("premium",  Decimal("2.3"), p_days, 3),
+            ]
+            tiers = []
+            for name, mult, days, rev in data:
+                tiers.append(OfferDetail.objects.create(
                     offer=offer,
                     title=f"{name.title()} Paket",
                     price=(Decimal(base) * mult).quantize(Decimal("1.00")),
@@ -747,9 +750,8 @@ class Command(BaseCommand):
                     revisions=rev,
                     features=random.sample(features, k=min(4, len(features))),
                     offer_type=name,
-                )
-            )
-        return tiers
+                ))
+            return tiers
 
 
 def _slug(s: str) -> str:
@@ -791,7 +793,7 @@ def _pick_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
 
 
 def _placeholder_image_bytes(text: str, size=(1200, 800)) -> bytes:
-    from PIL import Image, ImageDraw, ImageOps, ImageFilter
+    from PIL import Image, ImageDraw, ImageOps, ImageFilter 
 
     w, h = size
     margin = 36
